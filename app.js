@@ -4,7 +4,6 @@ const cookieParser = require("cookie-parser");
 const mongoose = require("mongoose");
 const logger = require("morgan");
 const bodyParser = require("body-parser");
-const cors = require("cors");
 
 const api = require("./api");
 
@@ -12,7 +11,6 @@ const app = express();
 
 // Middleware
 app.use(logger("dev"));
-app.use(cors({ origin: "http://localhost:8080", credentials: true }));
 app.use(cookieParser());
 app.use(bodyParser.urlencoded({
     extended: true,
