@@ -25,6 +25,8 @@ VIDEO_PATH = BASE_PATH + "/videos/train"
 VIDEO_TGZ_PATH = VIDEO_PATH + ".tar.gz"
 OUT_PATH = "images"
 
+CLASSES = ["excited" "tense" "upset" "bored" "relaxed" "sad" "happy"]
+
 
 def run():
     extract_files()
@@ -51,18 +53,46 @@ def make_images(number):
     arousal = open(ANNOTATION_PATH + "/arousal/%d.txt" % number, "r")
     valence = open(ANNOTATION_PATH + "/valence/%d.txt" % number, "r")
     video = cv2.VideoCapture()
-    i = 0
+    i = 1
     more, frame = video.read()
     while more:
         box = bbox(number, i)
-        if box is None:
-            continue
-        a = float(arousal.readline().rstrip())
-        v = float(valence.readline().rstrip())
-        # TODO save relevant part of frame to correct directory
-        #  If we are doing regression then save the labels too
-        #  If we are doing face detection then save the bounding box too
+        if box is not None:
+            a = float(arousal.readline().rstrip())
+            v = float(valence.readline().rstrip())
+            true_class = get_class(a, v)
+            # TODO use bounding box
+            cv2.imwrite("%s/%s/%d-%d.png" % (OUT_PATH, true_class, number, i), frame)
+        more, frame = video.read()
         i += 1
+
+
+def make_out_dirs():
+    if not os.path.exists(OUT_PATH):
+        os.mdir(OUT_PATH)
+    for cls in CLASSES:
+        path = OUT_PATH + "/" + cls
+        if not os.path.exists(path):
+            os.mkdir(path)
+
+
+# Reference https://csdl-images.computer.org/trans/ta/2012/02/figures/tta20120202371.gif
+def get_class(arousal, valence):
+    if arousal > 0.6:  # high arousal
+        if valence > 0:
+            return "excited"
+        else:
+            return "tense"
+    elif arousal > 0.4:  # neutral arousal
+        if valence > 0:
+            return "happy"
+        else:
+            return "sad"
+    else:  # low arousal
+        if valence > 0:
+            return "relaxed"
+        else:
+            return "bored"
 
 
 def extract_files():
