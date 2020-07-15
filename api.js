@@ -7,8 +7,15 @@ const fs = require("fs");
 
 const router = express.Router();
 router.post("/create-room", (req, res) => {
-    res.status(200).send(uuid());
+    const newRoom = uuid();
+    res.status(200).send(newRoom);
 });
+
+router.get("/status/:roomId", (req, res) => {
+    const status = { average: "happy", connectedCount: 3 };
+    res.json(status);
+});
+
 /*
 const VisualRecognitionV3 = require("ibm-watson/visual-recognition/v3");
 const { IamAuthenticator } = require("ibm-watson/auth");

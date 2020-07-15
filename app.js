@@ -9,7 +9,6 @@ const api = require("./api");
 
 const app = express();
 const http = require("http").Server(app);
-const io = require("socket.io")(http);
 
 // Middleware
 app.use(logger("dev"));
@@ -24,10 +23,6 @@ app.use(express.static(path.join(__dirname, "./public")));
 app.use("/api", api);
 app.get("/:id", (req, res) => {
     res.sendFile("public/index.html", { root: __dirname });
-});
-
-io.on("connection", () => {
-    console.log("connection");
 });
 
 // Database

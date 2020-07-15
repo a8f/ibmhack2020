@@ -5,7 +5,6 @@
     <title>
         Website
     </title>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js"></script>
     <script type="text/javascript" src="js/index.js"></script>
 </head>
 
@@ -13,6 +12,12 @@
     <div id="app">
         <button id="create-button">Create a room</button>
         <button id="participate-button">Participate</button>
+        <div id="loading">
+            Loading...
+        </div>
+        <div id="status">
+            <div id="connected-count"></div>
+        </div>
     </div>
 </body>
 

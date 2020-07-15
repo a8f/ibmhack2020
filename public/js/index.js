@@ -23,19 +23,53 @@ const apiFetch = async (path, options) => {
     return fetch(path.startsWith("http") ? path : apiUrl(path), reqOptions);
 };
 
-const socket = io();
-
 let uid = null;
+let status = null;
+const cameraEnabled = false;
+const updateRate = 5000; // ms between updates
 const room = window.location.pathname.slice(1);
 
 const createRoom = async () => {
     const res = await apiFetch("/create-room", { method: "POST" });
     const roomId = await res.text();
     window.location.href = roomId;
-    console.log(roomId);
 };
 
-const connectToSocket = async () => {
+const updateContent = () => {
+    const loadingDiv = document.querySelector("#loading");
+    const statusDiv = document.querySelector("#status");
+    if (!status) {
+        statusDiv.style.display = "none";
+        loadingDiv.style.display = "block";
+        return;
+    }
+
+    const connectedCount = document.querySelector("#connected-count");
+    connectedCount.textContent = `${status.connectedCount} connected`;
+    // TODO
+    loadingDiv.style.display = "none";
+    statusDiv.style.display = "block";
+};
+
+const updateStatus = async () => {
+    const res = await apiFetch(`/status/${room}`);
+    status = await res.json();
+    console.log("got updated status", status);
+};
+
+const getStatusForever = async () => {
+    if (cameraEnabled) {
+        return;
+    }
+    updateStatus().then(updateContent).then(setTimeout(getStatusForever, updateRate));
+};
+
+const enableCamera = () => {
+    cameraEnabled = true;
+    // TODO intermittently post camera image to the server
+};
+
+window.onload = () => {
     const id = localStorage.getItem("id");
     if (id) {
         uid = id;
@@ -43,22 +77,15 @@ const connectToSocket = async () => {
         uid = uuid();
         localStorage.setItem("id", uid);
     }
-    socket.open();
-};
-
-const enableCamera = () => {
-    // TODO intermittently post camera image to the server
-};
-
-window.onload = () => {
     const createButton = document.querySelector("#create-button");
     const participateButton = document.querySelector("#participate-button");
     if (room) {
-        connectToSocket();
         createButton.style.display = "none";
         participateButton.addEventListener("click", enableCamera);
+        getStatusForever();
     } else {
         createButton.addEventListener("click", createRoom);
         participateButton.style.display = "none";
+        document.querySelector("#loading").style.display = "none";
     }
 };
