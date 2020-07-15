@@ -16,7 +16,7 @@ router.get("/status/:roomId", (req, res) => {
     res.json(status);
 });
 
-/*
+
 const VisualRecognitionV3 = require("ibm-watson/visual-recognition/v3");
 const { IamAuthenticator } = require("ibm-watson/auth");
 
@@ -112,6 +112,6 @@ async function classifyImage(imagesFile, owners, threshold) {
     }
     return bestClassification;
 }
-*/
+
 
 module.exports = router;
