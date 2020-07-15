@@ -69,7 +69,29 @@ const getStatusForever = async () => {
 
 const enableCamera = () => {
     cameraEnabled = true;
+    document.getElementById("participate-button").style.display = "none";
+    document.getElementById("stop-participate-button").style.display = "block";
     // TODO intermittently post camera image to the server
+};
+
+const disableCamera = () => {
+    cameraEnabled = false;
+    document.getElementById("participate-button").style.display = "block";
+    document.getElementById("stop-participate-button").style.display = "none";
+};
+
+const copyCurrentUrl = () => {
+    const copyText = document.getElementById("copy-dummy");
+    copyText.type = "text";
+    copyText.value = window.location.href;
+    copyText.select();
+    document.execCommand("copy");
+    copyText.type = "hidden";
+    const copied = document.getElementById("copied");
+    copied.style.display = "inline-block";
+    setTimeout(() => {
+        copied.style.display = "none";
+    }, 1000);
 };
 
 window.onload = () => {
@@ -80,6 +102,8 @@ window.onload = () => {
         uid = uuid();
         localStorage.setItem("id", uid);
     }
-    document.querySelector("#participate-button").addEventListener("click", enableCamera);
+    document.getElementById("participate-button").addEventListener("click", enableCamera);
+    document.getElementById("stop-participate-button").addEventListener("click", disableCamera);
+    document.getElementById("copy-link").addEventListener("click", copyCurrentUrl);
     getStatusForever();
 };

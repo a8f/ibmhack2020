@@ -1,3 +1,10 @@
+#home {
+    position: fixed;
+    left: 90%;
+    bottom: 90%;
+    cursor: pointer;
+}
+
 #status {
     display: flex;
     flex-direction: row;
@@ -26,4 +33,20 @@
 #status-breakdown {
     font-size: large;
     margin: auto 0;
+}
+
+.round-button {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+#copied {
+    position: absolute;
+    top: 80%;
+    left: 49%;
 }

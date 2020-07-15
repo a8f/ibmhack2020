@@ -12,9 +12,7 @@ const createRoom = async () => {
     document.querySelector("#create-button").style.display = "none";
     const res = await fetch("/api/create-room", { method: "POST" });
     const roomId = await res.text();
-    window.location.href = roomId;
-    document.querySelector("#loading-room").style.display = "none";
-    document.querySelector("#create-button").style.display = "block";
+    window.location.replace(roomId);
 };
 
 window.onload = () => {

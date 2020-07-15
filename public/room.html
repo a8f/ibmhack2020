@@ -13,10 +13,14 @@
 </head>
 
 <body>
+    <input id="copy-dummy" type="hidden"> <!-- Need this for copying current URL to clipboard -->
     <div id="container">
         <div id="app">
             <div id="loading" style="display: none;">
                 Loading...
+            </div>
+            <div id="home" onclick="window.location.replace('/')">
+                <img src="icons/home.svg">
             </div>
             <div id="status">
                 <div id="connected-count">
@@ -33,6 +37,13 @@
             </div>
             <div id="buttons">
                 <button id="participate-button" class="big-button">Participate</button>
+                <div id="small-buttons">
+                    <button id="stop-participate-button" class="round-button" style="display: none;">Leave</button>
+                    <button id="copy-link" class="round-button"><img src="icons/copy.svg" style="width: 40px; height: 40px;"></button>
+                </div>
+                <div id="copied" style="display: none;">
+                    Copied!
+                </div>
             </div>
         </div>
     </div>
