@@ -1,0 +1,29 @@
+#container {
+    width: 100%;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+}
+
+body, html {
+    height: 100%;
+}
+
+.big-button {
+    height: 100px;
+    width: 200px;
+}
+
+#welcome-text {
+}
+
+#create-button {
+    height: 64px;
+    width: 200px;
+}
+
+#site-description {
+    max-width: 500px;
+}

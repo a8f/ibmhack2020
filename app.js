@@ -19,7 +19,7 @@ app.use(express.static(path.join(__dirname, "./public")));
 // Routes
 app.use("/api", api);
 app.get("/:id", (req, res) => {
-    res.sendFile("public/index.html", { root: __dirname });
+    res.sendFile("public/room.html", { root: __dirname });
 });
 
 // Start the server

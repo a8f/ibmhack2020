@@ -5,18 +5,24 @@
     <title>
         Website
     </title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/kognise/water.css@latest/dist/dark.min.css">
+    <link rel="stylesheet" href="css/base.css"/>
     <script type="text/javascript" src="js/index.js"></script>
 </head>
 
 <body>
-    <div id="app">
-        <button id="create-button">Create a room</button>
-        <button id="participate-button">Participate</button>
-        <div id="loading">
-            Loading...
-        </div>
-        <div id="status">
-            <div id="connected-count"></div>
+    <div id="container">
+        <div id="app">
+            <h3 id="welcome-text">Welcome to {APPNAMEHERE}!</h3>
+            <div id="site-description">
+                <p>
+                With {APPNAMEHERE} you can keep track of the visual queues in your chat without needing to see everybody's video.<br>
+                Simply click "Create a room" below and share the link.
+                </p>
+            </div>
+            <button id="create-button" class="big-button">Create a room</button>
+            <div id="loading-room" style="display: none;">Creating your room...</div>
         </div>
     </div>
 </body>

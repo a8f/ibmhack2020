@@ -36,12 +36,15 @@ router.get("/status/:roomId", async (req, res) => {
             res.sendStatus(500);
         });
     }
-    const status = { average: "happy", connectedCount: room.users.length };
+    const status = { average: "happy", connectedCount: room.users.length, counts: {} };
+    room.users.forEach((u) => {
+        status.counts[u.value] = (status.counts[u.value] || 0) + 1;
+    });
+    status.counts = { happy: 5, sad: 4, neutral: 9 }; // TODO remove
     res.json(status);
 });
 
 /*
->>>>>>> rooms
 const visualRecognition = new VisualRecognitionV3({
     version: process.env.WATSON_VISUAL_RECOGNITION_VERSION,
     authenticator: new IamAuthenticator({

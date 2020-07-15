@@ -1,0 +1,29 @@
+#status {
+    display: flex;
+    flex-direction: row;
+}
+
+#connected-count {
+    font-size: xx-large;
+}
+
+#connected-count-value {
+    font-size: 64pt;
+}
+
+#buttons {
+    padding-top: 8px
+}
+
+#status-vspace {
+    width: 1px;
+    min-height: 150px;
+    max-height: 200px;
+    margin: auto 32px;
+    background-color: white;
+}
+
+#status-breakdown {
+    font-size: large;
+    margin: auto 0;
+}
