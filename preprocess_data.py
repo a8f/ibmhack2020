@@ -21,55 +21,104 @@ ANNOTATION_PATH = BASE_PATH + "/annotations/train"
 ANNOTATION_TGZ_PATH = ANNOTATION_PATH + ".tar.gz"
 BBOX_PATH = BASE_PATH + "/bboxes/train/train"
 BBOX_TGZ_PATH = BBOX_PATH + ".tar.gz"
-VIDEO_PATH = BASE_PATH + "/videos/train"
+VIDEO_PATH = BASE_PATH + "/videos/train/train"
 VIDEO_TGZ_PATH = VIDEO_PATH + ".tar.gz"
 OUT_PATH = "images"
+ZIP_OUT_PATH = "out"
 
-CLASSES = ["excited" "tense" "upset" "bored" "relaxed" "sad" "happy"]
+CLASSES = [
+    "excited",
+    "happy",
+    "relaxed",
+    "interested",
+    "neutral",
+    "upset",
+    "surprised",
+    "sad",
+    "angry"
+]
+
+# If True then delete the contents of output directories before starting
+CLEAN_OUT_DIRS = True
+# If True then make zip folders of the output categories
+MAKE_ZIPS = False
 
 
 def run():
+    print("Extracting files and making output directories")
     extract_files()
+    make_out_dirs()
+    print("Getting and classifying frames")
     for videofile in tqdm(os.listdir(VIDEO_PATH)[:1]):
         number = videofile.rsplit(".", 1)
         if len(number) == 0:
             print("Skipping " + videofile)
-        number = number[0]
+        number = int(number[0])
         make_images(number)
+    if MAKE_ZIPS:
+        make_zips()
+    print("Done")
+
+
+def make_zips():
+    if not os.path.exists(ZIP_OUT_PATH):
+        os.mkdir(ZIP_OUT_PATH)
+    print("\nZipping results")
+    for cls in tqdm(CLASSES):
+        shutil.make_archive(ZIP_OUT_PATH + "/" + cls, "zip", OUT_PATH + "/" + cls)
 
 
 def bbox(number, frame):
-    with open(BBOX_PATH + "/%d/%d.pts" % (number, frame), "r") as f:
-        lines = f.readlines()
-        if len(lines) != 8:
-            return None
-        if lines[0] != "version: 1\n" or lines[1] != "n_points: 4\n":
-            return None
-        # TODO normalize image sizes
-        return map(lambda x: float(x.lstrip().rstrip()), lines[3:7])
+    try:
+        with open(BBOX_PATH + "/%d/%d.pts" % (number, frame), "r") as f:
+            lines = f.readlines()
+            if len(lines) != 8:
+                return None
+            if lines[0] != "version: 1\n" or lines[1] != "n_points: 4\n":
+                return None
+            # TODO normalize image sizes
+            coords = list(
+                map(
+                    lambda x: list(
+                        map(lambda p: int(float(p)), x.lstrip().rstrip().split(" "))
+                    ),
+                    lines[3:7],
+                )
+            )
+            xs = sorted(coords, key=lambda x: x[0])
+            ys = sorted(coords, key=lambda x: x[1])
+            return [[xs[0][0], xs[3][0]], [ys[0][1], ys[3][1]]]
+    except FileNotFoundError:
+        return None
 
 
 def make_images(number):
     arousal = open(ANNOTATION_PATH + "/arousal/%d.txt" % number, "r")
     valence = open(ANNOTATION_PATH + "/valence/%d.txt" % number, "r")
-    video = cv2.VideoCapture()
-    i = 1
+    video = cv2.VideoCapture(VIDEO_PATH + "/%d.avi" % number)
     more, frame = video.read()
+    i = 1
     while more:
         box = bbox(number, i)
         if box is not None:
             a = float(arousal.readline().rstrip())
             v = float(valence.readline().rstrip())
             true_class = get_class(a, v)
-            # TODO use bounding box
-            cv2.imwrite("%s/%s/%d-%d.png" % (OUT_PATH, true_class, number, i), frame)
+            cv2.imwrite(
+                "%s/%s/%d-%d.png" % (OUT_PATH, true_class, number, i),
+                frame[box[1][0] : box[1][1], box[0][0] : box[0][1]],
+            )
         more, frame = video.read()
         i += 1
+    arousal.close()
+    valence.close()
 
 
 def make_out_dirs():
+    if CLEAN_OUT_DIRS and os.path.exists(OUT_PATH):
+        shutil.rmtree(OUT_PATH)
     if not os.path.exists(OUT_PATH):
-        os.mdir(OUT_PATH)
+        os.mkdir(OUT_PATH)
     for cls in CLASSES:
         path = OUT_PATH + "/" + cls
         if not os.path.exists(path):
@@ -78,21 +127,29 @@ def make_out_dirs():
 
 # Reference https://csdl-images.computer.org/trans/ta/2012/02/figures/tta20120202371.gif
 def get_class(arousal, valence):
-    if arousal > 0.6:  # high arousal
-        if valence > 0:
+    if valence > 0.5:
+        if arousal > 0.5:
             return "excited"
+        elif arousal > 0.33:
+            return "surprised"
         else:
-            return "tense"
-    elif arousal > 0.4:  # neutral arousal
-        if valence > 0:
-            return "happy"
+            return "relaxed"
+    elif valence > 0.25:  # positive
+        if arousal > 0.5:
+            return "interested"
+        elif arousal > 0.33:
+            return "concerned"
+        else:
+            return "relaxed"
+    elif valence > -0.1:
+        return "neutral"
+    else:  # negative
+        if arousal > 0.5:
+            return "upset"
+        elif arousal > 0.1:
+            return "angry"
         else:
             return "sad"
-    else:  # low arousal
-        if valence > 0:
-            return "relaxed"
-        else:
-            return "bored"
 
 
 def extract_files():
