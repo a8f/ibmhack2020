@@ -8,6 +8,8 @@ const bodyParser = require("body-parser");
 const api = require("./api");
 
 const app = express();
+const http = require("http").Server(app);
+const io = require("socket.io")(http);
 
 // Middleware
 app.use(logger("dev"));
@@ -20,8 +22,16 @@ app.use(express.static(path.join(__dirname, "./public")));
 
 // Routes
 app.use("/api", api);
+app.get("/:id", (req, res) => {
+    res.sendFile("public/index.html", { root: __dirname });
+});
+
+io.on("connection", () => {
+    console.log("connection");
+});
 
 // Database
+/*
 const dbUrl = process.env.DB_URL || "mongodb://localhost/ibmhack2020";
 mongoose.connect(dbUrl, {
     useNewUrlParser: true, useUnifiedTopology: true,
@@ -32,7 +42,7 @@ db.on("error", (e) => {
     process.exit();
 });
 db.on("open", () => console.log(`Connected to database at ${dbUrl}`));
-
+*/
 // Start the server
 const port = process.env.PORT || 3333;
 app.listen(port, () => console.log(`Started on port ${port}`));
