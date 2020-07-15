@@ -1,4 +1,5 @@
 package-lock.json
+db_creds.json
 # Created by https://www.toptal.com/developers/gitignore/api/macos,windows,node,vim,visualstudiocode,emacs
 # Edit at https://www.toptal.com/developers/gitignore?templates=macos,windows,node,vim,visualstudiocode,emacs
 

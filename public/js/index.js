@@ -4,7 +4,8 @@ const BASE_API_URL = "/api";
 const apiUrl = (l) => `${BASE_API_URL + (!l || !l.length ? "" : (l[0] === "/" ? l : `/${l}`))}`;
 
 function uuid() {
-    return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, (c) => (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16));
+    return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g,
+        (c) => (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16));
 }
 
 /*
@@ -25,8 +26,8 @@ const apiFetch = async (path, options) => {
 
 let uid = null;
 let status = null;
-const cameraEnabled = false;
-const updateRate = 5000; // ms between updates
+let cameraEnabled = false;
+const updateRate = 30000; // ms between updates
 const room = window.location.pathname.slice(1);
 
 const createRoom = async () => {
