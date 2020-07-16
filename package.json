@@ -5,7 +5,7 @@
   "main": "server.js",
   "scripts": {
     "start-app": "node app.js",
-    "start": "source .env && nodemon app.js"
+    "start": "node app.js"
   },
   "cacheDirectories": [
     "node_modules"
