@@ -4,18 +4,42 @@ const multer = require("multer");
 const bodyParser = require("body-parser");
 const steamifier = require("streamifier");
 const fs = require("fs");
-const VisualRecognitionV3 = require("ibm-watson/visual-recognition/v3");
-const { IamAuthenticator } = require("ibm-watson/auth");
-
+// const VisualRecognitionV3 = require("ibm-watson/visual-recognition/v3");
+// const { IamAuthenticator } = require("ibm-watson/auth");
+const VisualRecognitionV3 = require("watson-developer-cloud/visual-recognition/v3");
+// const Readable = require("stream").Readable;
+const stream = require("stream");
 const db = require("./db");
 
 const TIMEOUT_MS = 20000;
 
+const visualRecognition = new VisualRecognitionV3({
+    version: "2018-03-19",
+    iam_apikey: process.env.IAM_APIKEY,
+});
+
 const router = express.Router();
 router.use(bodyParser.urlencoded({ extended: true }));
 
+const getRoomStatus = (room) => {
+    const users = Object.keys(room.users);
+    const status = { connectedCount: users.length, counts: {} };
+    users.forEach((u) => {
+        const user = room.users[u];
+        status.counts[user.value] = (status.counts[user.value] || 0) + 1;
+    });
+    // Add some fake test data
+    const getRandomInt = (max) => Math.floor(Math.random() * Math.floor(max));
+    status.counts = {
+        ...status.counts,
+        ANG: (status.counts.ANG || 0) + getRandomInt(10),
+        NEU: (status.counts.NEU || 0) + getRandomInt(10),
+    };
+    return status;
+};
+
 router.post("/create-room", (req, res) => {
-    const room = { _id: uuid(), created: Date.now(), users: [] };
+    const room = { _id: uuid(), created: Date.now(), users: {} };
     db.connection.insert(room, (err, result) => {
         if (err) {
             console.log("error inserting", room, ":", err);
@@ -28,110 +52,87 @@ router.post("/create-room", (req, res) => {
 
 router.get("/status/:roomId", async (req, res) => {
     const room = await db.connection.get(req.params.roomId);
-    const users = room.users.filter((u) => Date.now() - u.statusTime < TIMEOUT_MS);
-    if (users !== room.users) {
-        room.users = users;
+    const userIds = Object.keys(room.users);
+    const toDelete = [];
+    for (const u of userIds) {
+        if (Date.now() - room.users[u].statusTime > TIMEOUT_MS) {
+            toDelete.push(u);
+        }
+    }
+    if (toDelete.length) {
+        for (const id of toDelete) {
+            delete room.users[id];
+        }
         await db.connection.insert(room).catch((e) => {
             console.log("error inserting", room, ":", e);
             res.sendStatus(500);
         });
     }
-    const status = { average: "happy", connectedCount: room.users.length, counts: {} };
-    room.users.forEach((u) => {
-        status.counts[u.value] = (status.counts[u.value] || 0) + 1;
-    });
-    const getRandomInt = (max) => Math.floor(Math.random() * Math.floor(max));
-    status.counts = { happy: getRandomInt(10), sad: getRandomInt(10), neutral: getRandomInt(10) };
-    // status.counts = { happy: 5, sad: 4, neutral: 9 }; // TODO remove
+    const status = getRoomStatus(room);
     res.json(status);
 });
 
+const gotUserEmotions = async (classes, user, roomId, res) => {
+    let bestClass = { score: 0 };
+    for (const cls of classes) {
+        if (cls.score > bestClass.score) {
+            bestClass = cls;
+        }
+    }
+    const room = await db.connection.get(roomId);
+    const newRoom = { ...room };
+    if (bestClass.name) {
+        newRoom.users[user] = {
+            value: bestClass,
+            statusTime: Date.now(),
+        };
+        await db.connection.insert(newRoom).catch((e) => {
+            console.log("error inserting", newRoom, ":", e);
+            res.sendStatus(500);
+        });
+    }
+    res.json(getRoomStatus(newRoom));
+};
 
-const visualRecognition = new VisualRecognitionV3({
-    version: process.env.WATSON_VISUAL_RECOGNITION_VERSION,
-    authenticator: new IamAuthenticator({
-        apikey: process.env.WATSON_VISUAL_RECOGNITION_APIKEY,
-    }),
-    url: process.env.WATSON_VISUAL_RECOGNITION_URL,
-});
-/*
-(async () => {
-    // train w/ passed files
-    // const response = await visualRecognition.createClassifier({
-    //     name: "emotions_binary_withNegatives",
-    //     positiveExamples: {
-    //         positive: fs.createReadStream('/Users/vlad/Downloads/positive.zip'),
-    //         negative: fs.createReadStream('/Users/vlad/Downloads/negative.zip'),
-    //         neutral: fs.createReadStream('/Users/vlad/Downloads/neutral.zip'),
-    //     },
-    //     negativeExamples: fs.createReadStream('/Users/vlad/Downloads/negatives.zip')
-    // })
-
-    // delete created classifier
-    // console.log(JSON.stringify(response, null, 2));
-    // await visualRecognition.deleteClassifier({
-    //     classifierId: "emotions_924462837"
-    // });
-
-    console.log((await visualRecognition.listClassifiers({
-        verbose: true,
-    })).result);
-})();
-*/
-
-// endpoint accepts an array of images (<999) to classify. Image will NOT be classified if > 10MB
-// temporarily stores images as a buffer (w/o saving them to local storage)
 router.post("/getEmotions", async (req, res) => {
-    console.log("REACHED")
-    console.log(req.body)
-    const stream = fs.createReadStream(s[0]);
-    const classification = await classifyImage(stream, ["me"], 0.0); //! since we're only doing one image at a time this is fine.
-    res.send(classification);
+    if (!req.body || !req.body.image || !req.body.user || !req.body.room) {
+        res.sendStatus(400);
+        return;
+    }
 
-    // const upload = multer({ storage: multer.memoryStorage() }).array("image");
-    // upload(req, res, async (err) => {
-    //     if (err) {
-    //         return res.send(`Error: ${err}`);
-    //     }
-    //     if (!req.files) {
-    //         return res.send("Error: you must pass a files with data label 'image' to this endpoint"); // curl -F 'image=@/path/to/image' localhost:3333/api/emotions
-    //     }
-    //     if (req.files.length > 999) {
-    //         return res.send("Error: You may not send more than 999 files at a time to this endpoint");
-    //     }
-    //     const classificationTable = {};
-    //     console.log(req.file)
-    //     for (const file of req.files) {
-    //         console.log(file, "file")
-    //         try {
-    //             // keeps track of the best 3 classifications
-    //             const tempClassification = await classifyImage(steamifier.createReadStream(file.buffer), ["me"], 0.0);
-    //             if (Object.values(classificationTable).length < 3) {
-    //                 if (classificationTable[tempClassification.class]) { // classification is already in the table, add score and average
-    //                     classificationTable[tempClassification.class] = (classificationTable[tempClassification.class] + tempClassification.score) / 2.0;
-    //                 } else { // not in table
-    //                     classificationTable[tempClassification.class] = tempClassification.score;
-    //                 }
-    //             } else {
-    //                 // checks if the smallest saved classification score is less than the current classification score, if it is, replaces them
-    //                 const worstClassificationClass = Object.keys(classificationTable).reduce((a, b) => (classificationTable[a] < classificationTable[b] ? a : b));
-    //                 if (classificationTable[worstClassificationClass] < tempClassification.score) {
-    //                     delete classificationTable[worstClassificationClass];
-    //                     classificationTable[tempClassification.class] = tempClassification.score;
-    //                 }
-    //             }
-    //         } catch (e) {
-    //             console.log(e); // continues classifying images
-    //         }
-    //     }
-    //     console.log(classificationTable, 2)
-    //     return res.send(classificationTable);
-    // });
+    const base64Data = req.body.image.replace(/^data:image\/png;base64,/, "");
+
+    // TODO shouldn't need to hit disk here but I can't figure out how to make a working stream from memory
+    const filename = `${uuid()}.png`;
+    fs.writeFile(filename, base64Data, "base64", (err) => {
+        if (err) {
+            console.log(err);
+            res.sendStatus(500);
+            return;
+        }
+
+        const params = {
+            images_file: fs.createReadStream(filename),
+            classifier_ids: ["fullSource_317313030"],
+            threshold: 0.6,
+        };
+
+        visualRecognition.classify(params, (e, response) => {
+            if (e || !response.images || !response.images.length) {
+                console.log(e || "No images in response");
+                res.sendStatus(500);
+            } else {
+                fs.unlinkSync(filename);
+                gotUserEmotions(response.images[0].classifiers[0].classes, req.body.user, req.body.room, res);
+            }
+        });
+    });
 });
 
+/*
 // gets the ai's best classification of a passed image
 async function classifyImage(imagesFile, owners, threshold) {
-    console.log("made")
+    console.log("made");
     const { result } = await visualRecognition.classify({
         imagesFile,
         owners, // use ['me'] for watson to use your dataset to analize image
@@ -146,5 +147,5 @@ async function classifyImage(imagesFile, owners, threshold) {
     }
     return bestClassification;
 }
-
+*/
 module.exports = router;
