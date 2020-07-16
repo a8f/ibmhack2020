@@ -26,8 +26,8 @@ body, html {
 }
 
 .loader {
-  border: 16px solid #dbdbdb; /* Light grey */
-  border-top: 16px solid #202b38; /* Blue */
+  border: 16px solid #dbdbdb;
+  border-top: 16px solid #202b38;
   border-radius: 50%;
   width: 120px;
   height: 120px;

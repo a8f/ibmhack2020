@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/kognise/water.css@latest/dist/dark.min.css">
     <link rel="stylesheet" href="css/base.css"/>
     <link rel="stylesheet" href="css/room.css"/>
+    <script src="https://d3js.org/d3.v4.min.js"></script>
     <script type="text/javascript" src="js/room.js"></script>
 </head>
 
@@ -37,7 +38,9 @@
                     <div class="loader"></div>
                 </div>
             </div>
-
+            <div id="history">
+                <svg id="chart"></svg>
+            </div>
             <video width=0 height=0 id="video" autoplay></video>
             <canvas  id="camCanvas" width="400" height="400"></canvas>
             <div id="buttons">
@@ -45,6 +48,7 @@
                     <button id="participate-button" class="round-button"><img src="icons/plus.svg" class="button-icon"></button>
                     <button id="stop-participate-button" class="round-button" style="display: none;"><img src="icons/x.svg" class="button-icon"></button>
                     <button id="copy-link" class="round-button"><img src="icons/copy.svg" class="button-icon"></button>
+                    <button id="chart-toggle" class="round-button">Charts</button>
                 </div>
                 <div id="copied" style="display: none;">
                     Copied!

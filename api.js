@@ -40,7 +40,9 @@ router.get("/status/:roomId", async (req, res) => {
     room.users.forEach((u) => {
         status.counts[u.value] = (status.counts[u.value] || 0) + 1;
     });
-    status.counts = { happy: 5, sad: 4, neutral: 9 }; // TODO remove
+    const getRandomInt = (max) => Math.floor(Math.random() * Math.floor(max));
+    status.counts = { happy: getRandomInt(10), sad: getRandomInt(10), neutral: getRandomInt(10) };
+    // status.counts = { happy: 5, sad: 4, neutral: 9 }; // TODO remove
     res.json(status);
 });
 
