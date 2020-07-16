@@ -13,7 +13,8 @@
 </head>
 
 <body>
-    <input style="height: 0;" id="copy-dummy" type="hidden"> <!-- Need this for copying current URL to clipboard -->
+    <!-- Need this for copying current URL to clipboard -->
+    <input style="height: 0;" id="copy-dummy" type="hidden">
     <div id="container">
         <div id="app">
             <div id="loading" style="display: none;">
@@ -35,6 +36,9 @@
                 <div id="status-breakdown">
                 </div>
             </div>
+
+            <video width=0 height=0 id="video" autoplay></video>
+            <canvas  id="camCanvas" width="400" height="400"></canvas>
             <div id="buttons">
                 <div id="small-buttons">
                     <button id="participate-button" class="round-button"><img src="icons/plus.svg" class="button-icon"></button>

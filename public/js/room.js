@@ -26,6 +26,9 @@ const apiFetch = async (path, options) => {
 
 let uid = null;
 let status = null;
+let video;
+let webcamStream;
+let camContext;
 let cameraEnabled = false;
 const updateRate = 30000; // ms between updates
 const room = window.location.pathname.slice(1);
@@ -69,6 +72,7 @@ const getStatusForever = async () => {
 
 const enableCamera = () => {
     cameraEnabled = true;
+    initCam();
     document.getElementById("participate-button").style.display = "none";
     document.getElementById("stop-participate-button").style.display = "block";
     // TODO intermittently post camera image to the server
@@ -92,6 +96,49 @@ const copyCurrentUrl = () => {
     setTimeout(() => {
         copied.style.display = "none";
     }, 1000);
+};
+
+const initCam = () => {
+    const canvas = document.getElementById("camCanvas");
+    camContext = canvas.getContext("2d");
+    navigator.getUserMedia = (navigator.getUserMedia
+                             || navigator.webkitGetUserMedia
+                             || navigator.mozGetUserMedia
+                             || navigator.msGetUserMedia);
+    if (navigator.getUserMedia) {
+        navigator.getUserMedia(
+
+            // constraints
+            {
+                video: true,
+                audio: false,
+            },
+
+            // successCallback
+            (localMediaStream) => {
+                video = document.querySelector("video");
+                video.srcObject = localMediaStream;
+                webcamStream = localMediaStream;
+            },
+
+            // errorCallback
+            (err) => {
+                console.log(`The following error occured: ${err}`);
+            },
+        );
+    } else {
+        console.log("getUserMedia not supported");
+    }
+
+    setTimeout(getCamSnapshot, 3000);
+};
+
+const getCamSnapshot = () => {
+    if (!video) {
+        console.log("tried to take image when camera not enabled");
+        return;
+    }
+    camContext.drawImage(video, 0, 0, 400, 400);
 };
 
 window.onload = () => {
