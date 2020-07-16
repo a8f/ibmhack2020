@@ -169,6 +169,7 @@ const initCam = () => {
                 console.log(`The following error occured: ${err}`);
             },
         );
+        cameraEnabled = true;
     } else {
         console.log("getUserMedia not supported");
     }
