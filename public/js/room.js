@@ -1,5 +1,7 @@
 "use strict";
 
+const db = require("../../db");
+
 const BASE_API_URL = "/api";
 const apiUrl = (l) => `${BASE_API_URL + (!l || !l.length ? "" : (l[0] === "/" ? l : `/${l}`))}`;
 
@@ -102,9 +104,9 @@ const initCam = () => {
     const canvas = document.getElementById("camCanvas");
     camContext = canvas.getContext("2d");
     navigator.getUserMedia = (navigator.getUserMedia
-                             || navigator.webkitGetUserMedia
-                             || navigator.mozGetUserMedia
-                             || navigator.msGetUserMedia);
+        || navigator.webkitGetUserMedia
+        || navigator.mozGetUserMedia
+        || navigator.msGetUserMedia);
     if (navigator.getUserMedia) {
         navigator.getUserMedia(
 
@@ -133,12 +135,36 @@ const initCam = () => {
     setTimeout(getCamSnapshot, 3000);
 };
 
-const getCamSnapshot = () => {
+const getCamSnapshot = async () => { // TODO: get this to repeat every X seconds
     if (!video) {
         console.log("tried to take image when camera not enabled");
         return;
     }
-    camContext.drawImage(video, 0, 0, 400, 400);
+
+    // TODO: send picture through post request,
+    // TODO: end up locally saving image and passing path through post req.
+    //camContext.drawImage(video, 0, 0, 400, 400);
+    let imagepng = (document.getElementById("camCanvas")).toDataURL('image/png');
+    let image = new Image;
+    image.src = imagepng
+    // console.log(fd)
+    const classification = await $.ajax({
+        url: 'http://localhost:3333/api/getEmotions',
+        data: imagepng, //! cannot get this data to pass properlyyyyyy ugh
+        type: 'POST',
+        //dataType: false,
+        //processData: false,
+    });
+
+    // classification is: { class: classification_name, score: classification_score }
+    db.connection.insert(classification, (err, result) => { // TODO: confirm this is working as we want it
+        if (err) {
+            console.log("error inserting", classification, ":", err);
+            res.sendStatus(500);
+        } else {
+            res.status(200).send();
+        }
+    });
 };
 
 window.onload = () => {
@@ -154,3 +180,5 @@ window.onload = () => {
     document.getElementById("copy-link").addEventListener("click", copyCurrentUrl);
     getStatusForever();
 };
+
+
