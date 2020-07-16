@@ -46,7 +46,7 @@ router.get("/status/:roomId", async (req, res) => {
     res.json(status);
 });
 
-/*
+
 const visualRecognition = new VisualRecognitionV3({
     version: process.env.WATSON_VISUAL_RECOGNITION_VERSION,
     authenticator: new IamAuthenticator({
@@ -54,7 +54,7 @@ const visualRecognition = new VisualRecognitionV3({
     }),
     url: process.env.WATSON_VISUAL_RECOGNITION_URL,
 });
-
+/*
 (async () => {
     // train w/ passed files
     // const response = await visualRecognition.createClassifier({
@@ -81,49 +81,57 @@ const visualRecognition = new VisualRecognitionV3({
 
 // endpoint accepts an array of images (<999) to classify. Image will NOT be classified if > 10MB
 // temporarily stores images as a buffer (w/o saving them to local storage)
-// returns top 3 classifications and their prevalence
-router.post("/getEmotions", (req, res) => {
-    const upload = multer({ storage: multer.memoryStorage() }).array("image");
-    upload(req, res, async (err) => {
-        if (err) {
-            return res.send(`Error: ${err}`);
-        }
-        if (!req.files) {
-            return res.send("Error: you must pass a files with data label 'image' to this endpoint"); // curl -F 'image=@/path/to/image' localhost:3333/api/emotions
-        }
-        if (req.files.length > 999) {
-            return res.send("Error: You may not send more than 999 files at a time to this endpoint");
-        }
-        const classificationTable = {};
-        for (const file of req.files) {
-            try {
-                // keeps track of the best 3 classifications
-                const tempClassification = await classifyImage(steamifier.createReadStream(file.buffer), ["me"], 0.0);
-                if (Object.values(classificationTable).length < 3) {
-                    if (classificationTable[tempClassification.class]) { // classification is already in the table, add score and average
-                        classificationTable[tempClassification.class] = (classificationTable[tempClassification.class] + tempClassification.score) / 2.0;
-                    } else { // not in table
-                        classificationTable[tempClassification.class] = tempClassification.score;
-                    }
-                } else {
-                    // checks if the smallest saved classification score is less than the current classification score, if it is, replaces them
-                    const worstClassificationClass = Object.keys(classificationTable).reduce((a, b) => (classificationTable[a] < classificationTable[b] ? a : b));
-                    if (classificationTable[worstClassificationClass] < tempClassification.score) {
-                        delete classificationTable[worstClassificationClass];
-                        classificationTable[tempClassification.class] = tempClassification.score;
-                    }
-                }
-            } catch (e) {
-                console.log(e); // continues classifying images
-            }
-        }
-        // console.log(classificationTable)
-        return res.send(classificationTable);
-    });
+router.post("/getEmotions", async (req, res) => {
+    console.log("REACHED")
+    console.log(req.body)
+    const stream = fs.createReadStream(s[0]);
+    const classification = await classifyImage(stream, ["me"], 0.0); //! since we're only doing one image at a time this is fine.
+    res.send(classification);
+
+    // const upload = multer({ storage: multer.memoryStorage() }).array("image");
+    // upload(req, res, async (err) => {
+    //     if (err) {
+    //         return res.send(`Error: ${err}`);
+    //     }
+    //     if (!req.files) {
+    //         return res.send("Error: you must pass a files with data label 'image' to this endpoint"); // curl -F 'image=@/path/to/image' localhost:3333/api/emotions
+    //     }
+    //     if (req.files.length > 999) {
+    //         return res.send("Error: You may not send more than 999 files at a time to this endpoint");
+    //     }
+    //     const classificationTable = {};
+    //     console.log(req.file)
+    //     for (const file of req.files) {
+    //         console.log(file, "file")
+    //         try {
+    //             // keeps track of the best 3 classifications
+    //             const tempClassification = await classifyImage(steamifier.createReadStream(file.buffer), ["me"], 0.0);
+    //             if (Object.values(classificationTable).length < 3) {
+    //                 if (classificationTable[tempClassification.class]) { // classification is already in the table, add score and average
+    //                     classificationTable[tempClassification.class] = (classificationTable[tempClassification.class] + tempClassification.score) / 2.0;
+    //                 } else { // not in table
+    //                     classificationTable[tempClassification.class] = tempClassification.score;
+    //                 }
+    //             } else {
+    //                 // checks if the smallest saved classification score is less than the current classification score, if it is, replaces them
+    //                 const worstClassificationClass = Object.keys(classificationTable).reduce((a, b) => (classificationTable[a] < classificationTable[b] ? a : b));
+    //                 if (classificationTable[worstClassificationClass] < tempClassification.score) {
+    //                     delete classificationTable[worstClassificationClass];
+    //                     classificationTable[tempClassification.class] = tempClassification.score;
+    //                 }
+    //             }
+    //         } catch (e) {
+    //             console.log(e); // continues classifying images
+    //         }
+    //     }
+    //     console.log(classificationTable, 2)
+    //     return res.send(classificationTable);
+    // });
 });
 
 // gets the ai's best classification of a passed image
 async function classifyImage(imagesFile, owners, threshold) {
+    console.log("made")
     const { result } = await visualRecognition.classify({
         imagesFile,
         owners, // use ['me'] for watson to use your dataset to analize image
