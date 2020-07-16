@@ -1,14 +1,8 @@
 const uuid = require("uuid").v4;
 const express = require("express");
-const multer = require("multer");
 const bodyParser = require("body-parser");
-const steamifier = require("streamifier");
 const fs = require("fs");
-// const VisualRecognitionV3 = require("ibm-watson/visual-recognition/v3");
-// const { IamAuthenticator } = require("ibm-watson/auth");
 const VisualRecognitionV3 = require("watson-developer-cloud/visual-recognition/v3");
-// const Readable = require("stream").Readable;
-const stream = require("stream");
 const db = require("./db");
 
 const TIMEOUT_MS = 20000;
