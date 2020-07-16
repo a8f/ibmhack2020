@@ -13,7 +13,7 @@
 </head>
 
 <body>
-    <input id="copy-dummy" type="hidden"> <!-- Need this for copying current URL to clipboard -->
+    <input style="height: 0;" id="copy-dummy" type="hidden"> <!-- Need this for copying current URL to clipboard -->
     <div id="container">
         <div id="app">
             <div id="loading" style="display: none;">
@@ -36,10 +36,10 @@
                 </div>
             </div>
             <div id="buttons">
-                <button id="participate-button" class="big-button">Participate</button>
                 <div id="small-buttons">
-                    <button id="stop-participate-button" class="round-button" style="display: none;">Leave</button>
-                    <button id="copy-link" class="round-button"><img src="icons/copy.svg" style="width: 40px; height: 40px;"></button>
+                    <button id="participate-button" class="round-button"><img src="icons/plus.svg" class="button-icon"></button>
+                    <button id="stop-participate-button" class="round-button" style="display: none;"><img src="icons/x.svg" class="button-icon"></button>
+                    <button id="copy-link" class="round-button"><img src="icons/copy.svg" class="button-icon"></button>
                 </div>
                 <div id="copied" style="display: none;">
                     Copied!

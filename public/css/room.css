@@ -3,6 +3,7 @@
     left: 90%;
     bottom: 90%;
     cursor: pointer;
+    display: inline;
 }
 
 #status {
@@ -19,7 +20,7 @@
 }
 
 #buttons {
-    padding-top: 8px
+    padding-top: 32px
 }
 
 #status-vspace {
@@ -33,6 +34,7 @@
 #status-breakdown {
     font-size: large;
     margin: auto 0;
+    text-align: left;
 }
 
 .round-button {
@@ -42,11 +44,26 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0;
+  padding: 0 8px;
+  margin: 0 8px;
 }
 
 #copied {
     position: absolute;
     top: 80%;
     left: 49%;
+}
+
+#small-buttons {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    align-content: space-around;
+    justify-content: center;
+    width: 100%;
+}
+
+.button-icon {
+    height: 40px;
+    width: 40px;
 }
