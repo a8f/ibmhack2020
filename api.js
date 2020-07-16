@@ -9,7 +9,7 @@ const TIMEOUT_MS = 20000;
 
 const visualRecognition = new VisualRecognitionV3({
     version: "2018-03-19",
-    iam_apikey: process.env.IAM_APIKEY,
+    iam_apikey: "7YRU6iEFNcuHVy7hsrDjho2Id4uLavWSmpbenbiuY38Z",
 });
 
 const router = express.Router();
@@ -122,7 +122,7 @@ router.post("/getEmotions", async (req, res) => {
 
         const params = {
             images_file: fs.createReadStream(filename),
-            classifier_ids: ["fullSource_317313030"],
+            classifier_ids: ["realSourceOnly_1265124728"],
             threshold: 0.6,
         };
 
