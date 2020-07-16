@@ -9,6 +9,7 @@
 #status {
     display: flex;
     flex-direction: row;
+	padding-left: 90px;
 }
 
 #connected-count {
@@ -51,7 +52,7 @@
 #copied {
     position: absolute;
     top: 80%;
-    left: 49%;
+    left: 50%;
 }
 
 #small-buttons {
@@ -79,4 +80,11 @@
   border-radius: 50%;
   display: inline-block;
   margin: 2px 4px;
+}
+
+#big-content {
+		display: flex;
+		flex-direction: row;
+		align-content: center;
+		justify-content: center;
 }

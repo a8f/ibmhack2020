@@ -3,7 +3,7 @@
 
 <head>
     <title>
-        Website
+			EDWIN
     </title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/kognise/water.css@latest/dist/dark.min.css">
@@ -40,18 +40,20 @@
                     <div class="loader"></div>
                 </div>
             </div>
+			<div id="big-content">
+			<div style="padding-top: 8px;"><video id="video" autoplay style="display: none;"></video></div>
             <div id="history">
                 <svg id="chart"></svg>
             </div>
-            <video id="video" width="400" height="400" autoplay></video>
-            <canvas  id="camCanvas" width="400" height="400"></canvas>
+			<div><canvas id="camCanvas" style="display: none;"></canvas></div>
+			</div>
             <div id="buttons">
                 <div id="small-buttons">
-                    <button onclick="initCam();" class="round-button"></button>
                     <button id="participate-button" class="round-button"><img src="icons/plus.svg" class="button-icon"></button>
                     <button id="stop-participate-button" class="round-button" style="display: none;"><img src="icons/x.svg" class="button-icon"></button>
                     <button id="copy-link" class="round-button"><img src="icons/copy.svg" class="button-icon"></button>
 					<button id="chart-toggle" class="round-button"><img src="icons/chart.svg" class="button-icon"></button>
+                    <button id="preview-toggle" class="round-button"><img src="icons/eye.svg" class="button-icon"></button>
                 </div>
                 <div id="copied" style="display: none;">
                     Copied!

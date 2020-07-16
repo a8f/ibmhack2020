@@ -143,6 +143,13 @@ const copyCurrentUrl = () => {
     }, 1000);
 };
 
+const togglePreview = () => {
+    const vid = document.getElementById("video");
+    vid.style.display = vid.style.display === "none" ? "inline-block" : "none";
+    // const canv = document.getElementById("camCanvas");
+    // canv.style.display = canv.style.display === "none" ? "inline-block" : "none";
+};
+
 const initCam = () => {
     navigator.getUserMedia = (navigator.getUserMedia
         || navigator.webkitGetUserMedia
@@ -170,6 +177,8 @@ const initCam = () => {
             },
         );
         cameraEnabled = true;
+        document.getElementById("video").style.display = "inline-block";
+        // document.getElementById("camCanvas").style.display = "inline-block";
     } else {
         console.log("getUserMedia not supported");
     }
@@ -180,9 +189,11 @@ const getCamSnapshot = async () => {
         console.log("tried to take image when camera not enabled");
         return;
     }
-
+    const v = document.getElementById("video");
     const canvas = document.getElementById("camCanvas");
-    canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
+    const width = v.videoWidth;
+    const height = v.videoHeight;
+    canvas.getContext("2d").drawImage(video, 0, 0, width, height);
     const image = canvas.toDataURL("image/png");
     const res = await apiFetch("/getEmotions", {
         method: "POST",
@@ -266,6 +277,7 @@ window.onload = () => {
     document.getElementById("stop-participate-button").addEventListener("click", disableCamera);
     document.getElementById("copy-link").addEventListener("click", copyCurrentUrl);
     document.getElementById("chart-toggle").addEventListener("click", toggleChart);
+    document.getElementById("preview-toggle").addEventListener("click", togglePreview);
     initChart();
     getStatusForever();
 };
