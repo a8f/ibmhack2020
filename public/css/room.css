@@ -1,3 +1,7 @@
+#container {
+	padding-left: 64px;
+}
+
 #home {
     position: fixed;
     left: 90%;

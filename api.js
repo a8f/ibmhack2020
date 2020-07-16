@@ -15,6 +15,11 @@ const visualRecognition = new VisualRecognitionV3({
 const router = express.Router();
 router.use(bodyParser.urlencoded({ extended: true }));
 
+const TEST_MODE = false;
+
+let numUsers = 0;
+const start = Date.now();
+
 const getRoomStatus = (room) => {
     const users = Object.keys(room.users);
     const status = { connectedCount: users.length, counts: {} };
@@ -22,13 +27,23 @@ const getRoomStatus = (room) => {
         const user = room.users[u];
         status.counts[user.value] = (status.counts[user.value] || 0) + 1;
     });
-    // Add some fake test data
+    // Add some fake test data for doing the demo since we can't easily get more than 5 people
     const getRandomInt = (max) => Math.floor(Math.random() * Math.floor(max));
-    status.counts = {
-        ...status.counts,
-        ANG: (status.counts.ANG || 0) + getRandomInt(10),
-        NEU: (status.counts.NEU || 0) + getRandomInt(10),
-    };
+    if (TEST_MODE && Date.now() - start > 10000 && numUsers < 10) {
+        numUsers += 2;
+        let total = numUsers;
+        const ang = getRandomInt(4);
+        total -= ang;
+        const neu = getRandomInt(5);
+        total -= neu;
+        const sur = getRandomInt(4);
+        status.counts = {
+            ...status.counts,
+            ANG: ang < 0 ? 0 : ang,
+            NEU: (neu + total) < 0 ? 0 : neu + total,
+            SUR: sur < 0 ? 0 : sur,
+        };
+    }
     return status;
 };
 

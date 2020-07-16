@@ -56,7 +56,7 @@ const EMOTIONS = {
     FEA: { name: "Fear", color: "lightsalmon" },
 };
 
-const updateRate = 9000; // ms between updates
+const updateRate = 5000; // ms between updates
 const room = window.location.pathname.slice(1);
 let first = true;
 
