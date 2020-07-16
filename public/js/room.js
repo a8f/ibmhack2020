@@ -32,7 +32,23 @@ let video;
 let webcamStream;
 let camContext;
 let cameraEnabled = false;
-const updateRate = 30000; // ms between updates
+// Variables for chart
+const chartHeight = 500;
+const chartData = [];
+let globalX = 0;
+let x;
+let y;
+const max = 500;
+const step = 50;
+const smoothLines = {};
+const duration = 500;
+let xAxis;
+let axisX;
+const paths = {};
+let chart;
+const EMOTION_COLORS = { sad: "red", happy: "green", neutral: "white" };
+
+const updateRate = 9000; // ms between updates
 const room = window.location.pathname.slice(1);
 
 const updateContent = () => {
@@ -44,24 +60,33 @@ const updateContent = () => {
         return;
     }
 
-    const connectedCount = document.querySelector("#connected-count-value");
-    connectedCount.textContent = status.connectedCount || 0;
+    let count = 0;
     const statusBreakdown = document.querySelector("#status-breakdown");
     statusBreakdown.innerHTML = "";
     Object.keys(status.counts).forEach((emotion) => {
+        count += status.counts[emotion];
         const div = document.createElement("div");
         div.className = "emotion-count";
+        div.style.display = "flex";
+        div.style.flexDirection = "row";
+        const circle = document.createElement("div");
+        circle.className = "circle";
+        circle.style.backgroundColor = EMOTION_COLORS[emotion];
+        div.appendChild(circle);
         div.appendChild(document.createTextNode(`${status.counts[emotion]} ${emotion}`));
         statusBreakdown.appendChild(div);
     });
-    // TODO
+    const connectedCount = document.querySelector("#connected-count-value");
+    connectedCount.textContent = count;
     loadingDiv.style.display = "none";
     statusDiv.style.display = "flex";
+    updateChart(status);
 };
 
 const updateStatus = async () => {
     const res = await apiFetch(`/status/${room}`);
     status = await res.json();
+    updateChart(status);
     console.log("got updated status", status);
 };
 
@@ -167,6 +192,71 @@ const getCamSnapshot = async () => { // TODO: get this to repeat every X seconds
     });
 };
 
+// Charts adapted from http://bl.ocks.org/denisemauldin/ceb7065687c125223339a26a47d58a28
+const initChart = () => {
+    const width = 500;
+    chart = d3.select("#chart")
+        .attr("width", width + 50)
+        .attr("height", chartHeight + 50);
+    x = d3.scaleLinear().domain([0, 500]).range([0, 500]);
+    y = d3.scaleLinear().domain([0, 10]).range([500, 0]);
+
+    const line = d3.line()
+        .x((d) => x(d.x))
+        .y((d) => y(d.y));
+
+    xAxis = d3.axisBottom().scale(x).tickValues([]);
+    axisX = chart.append("g").attr("class", "x axis")
+			     .attr("transform", "translate(0, 500)")
+			     .call(xAxis);
+    // TODO once we know all the classes they should all have a point drawn at 0 here so the first actual datapoint
+    // has a line (atm the line is only drawn after the 2nd status update)
+};
+
+const updateChart = (newStatus) => {
+    if (!newStatus.counts) return;
+    const emotions = Object.keys(newStatus.counts);
+    emotions.forEach((emotion) => {
+        if (!paths[emotion]) {
+            paths[emotion] = chart.append("path");
+        }
+        const point = { x: globalX, y: newStatus.counts[emotion] };
+        if (!chartData[emotion]) {
+            chartData[emotion] = [];
+        }
+        chartData[emotion].push(point);
+        if (!smoothLines[emotion]) {
+            smoothLines[emotion] = d3.line().curve(d3.curveCardinal)
+                .x((d) => x(d.x))
+                .y((d) => y(d.y));
+        }
+        paths[emotion].datum(chartData[emotion])
+            .attr("class", "smoothline")
+            .attr("style", `stroke: ${EMOTION_COLORS[emotion]}`)
+            .attr("d", smoothLines[emotion]);
+    });
+    // Shift the chart left
+    globalX += step;
+    x.domain([globalX - (max - step), globalX]);
+    axisX.transition()
+        .duration(duration)
+        .ease(d3.easeLinear, 2)
+        .call(xAxis);
+    emotions.forEach((emotion) => {
+        paths[emotion].attr("transform", null)
+            .transition()
+            .duration(duration)
+            .ease(d3.easeLinear, 2)
+            .attr("transform", `translate(${x(globalX - max)})`);
+        if (chartData[emotion].length > 30) chartData[emotion].shift();
+    });
+};
+
+const toggleChart = () => {
+    const chart = document.getElementById("chart");
+    chart.style.display = chart.style.display === "none" ? "block" : "none";
+};
+
 window.onload = () => {
     const id = localStorage.getItem("id");
     if (id) {
@@ -178,6 +268,8 @@ window.onload = () => {
     document.getElementById("participate-button").addEventListener("click", enableCamera);
     document.getElementById("stop-participate-button").addEventListener("click", disableCamera);
     document.getElementById("copy-link").addEventListener("click", copyCurrentUrl);
+    document.getElementById("chart-toggle").addEventListener("click", toggleChart);
+    initChart();
     getStatusForever();
 };
 

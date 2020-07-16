@@ -67,3 +67,16 @@
     height: 40px;
     width: 40px;
 }
+
+.smoothline {
+    fill: none;
+    stroke-width: 3px;
+}
+
+.circle {
+  height: 16px;
+  width: 16px;
+  border-radius: 50%;
+  display: inline-block;
+  margin: 2px 4px;
+}
