@@ -1,6 +1,6 @@
 "use strict";
 
-const db = require("../../db");
+// const db = require("../../db");
 
 const BASE_API_URL = "/api";
 const apiUrl = (l) => `${BASE_API_URL + (!l || !l.length ? "" : (l[0] === "/" ? l : `/${l}`))}`;
@@ -18,7 +18,7 @@ function uuid() {
  * options are fetch API options
  */
 const apiFetch = async (path, options) => {
-    const reqOptions = { ...options, credentials: "include" };
+    const reqOptions = { ...options };
     if (options && options.body && typeof options.body !== "string") {
         reqOptions.body = JSON.stringify(options.body);
         reqOptions.headers = { "Content-type": "application/json; charset=UTF-8" };
@@ -46,10 +46,19 @@ let xAxis;
 let axisX;
 const paths = {};
 let chart;
-const EMOTION_COLORS = { sad: "red", happy: "green", neutral: "white" };
+const EMOTIONS = {
+    ANG: { name: "Anger", color: "red" },
+    NEU: { name: "Neutral", color: "white" },
+    SUR: { name: "Surprised", color: "darkslateblue" },
+    JOY: { name: "Joy", color: "gold" },
+    DIS: { name: "Disgust", color: "orange" },
+    SAD: { name: "Sad", color: "darkblue" },
+    FEA: { name: "Fear", color: "lightsalmon" },
+};
 
 const updateRate = 9000; // ms between updates
 const room = window.location.pathname.slice(1);
+let first = true;
 
 const updateContent = () => {
     const loadingDiv = document.querySelector("#loading");
@@ -71,9 +80,9 @@ const updateContent = () => {
         div.style.flexDirection = "row";
         const circle = document.createElement("div");
         circle.className = "circle";
-        circle.style.backgroundColor = EMOTION_COLORS[emotion];
+        circle.style.backgroundColor = EMOTIONS[emotion].color;
         div.appendChild(circle);
-        div.appendChild(document.createTextNode(`${status.counts[emotion]} ${emotion}`));
+        div.appendChild(document.createTextNode(`${status.counts[emotion]} ${EMOTIONS[emotion].name}`));
         statusBreakdown.appendChild(div);
     });
     const connectedCount = document.querySelector("#connected-count-value");
@@ -86,7 +95,10 @@ const updateContent = () => {
 const updateStatus = async () => {
     const res = await apiFetch(`/status/${room}`);
     status = await res.json();
-    updateChart(status);
+    if (first) {
+        updateChart(status);
+        first = false;
+    }
     console.log("got updated status", status);
 };
 
@@ -97,18 +109,24 @@ const getStatusForever = async () => {
     updateStatus().then(updateContent).then(setTimeout(getStatusForever, updateRate));
 };
 
+const sendSnapshotsForever = async () => {
+    if (!cameraEnabled) return;
+    getCamSnapshot().then(updateContent).then(setTimeout(sendSnapshotsForever, updateRate));
+};
+
 const enableCamera = () => {
-    cameraEnabled = true;
     initCam();
+    cameraEnabled = true;
     document.getElementById("participate-button").style.display = "none";
     document.getElementById("stop-participate-button").style.display = "block";
-    // TODO intermittently post camera image to the server
+    setTimeout(sendSnapshotsForever, 3000);
 };
 
 const disableCamera = () => {
     cameraEnabled = false;
     document.getElementById("participate-button").style.display = "block";
     document.getElementById("stop-participate-button").style.display = "none";
+    getStatusForever();
 };
 
 const copyCurrentUrl = () => {
@@ -126,8 +144,6 @@ const copyCurrentUrl = () => {
 };
 
 const initCam = () => {
-    const canvas = document.getElementById("camCanvas");
-    camContext = canvas.getContext("2d");
     navigator.getUserMedia = (navigator.getUserMedia
         || navigator.webkitGetUserMedia
         || navigator.mozGetUserMedia
@@ -156,40 +172,22 @@ const initCam = () => {
     } else {
         console.log("getUserMedia not supported");
     }
-
-    setTimeout(getCamSnapshot, 3000);
 };
 
-const getCamSnapshot = async () => { // TODO: get this to repeat every X seconds
+const getCamSnapshot = async () => {
     if (!video) {
         console.log("tried to take image when camera not enabled");
         return;
     }
 
-    // TODO: send picture through post request,
-    // TODO: end up locally saving image and passing path through post req.
-    //camContext.drawImage(video, 0, 0, 400, 400);
-    let imagepng = (document.getElementById("camCanvas")).toDataURL('image/png');
-    let image = new Image;
-    image.src = imagepng
-    // console.log(fd)
-    const classification = await $.ajax({
-        url: 'http://localhost:3333/api/getEmotions',
-        data: imagepng, //! cannot get this data to pass properlyyyyyy ugh
-        type: 'POST',
-        //dataType: false,
-        //processData: false,
+    const canvas = document.getElementById("camCanvas");
+    canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
+    const image = canvas.toDataURL("image/png");
+    const res = await apiFetch("/getEmotions", {
+        method: "POST",
+        body: { image, user: uid, room },
     });
-
-    // classification is: { class: classification_name, score: classification_score }
-    db.connection.insert(classification, (err, result) => { // TODO: confirm this is working as we want it
-        if (err) {
-            console.log("error inserting", classification, ":", err);
-            res.sendStatus(500);
-        } else {
-            res.status(200).send();
-        }
-    });
+    status = await res.json();
 };
 
 // Charts adapted from http://bl.ocks.org/denisemauldin/ceb7065687c125223339a26a47d58a28
@@ -207,10 +205,8 @@ const initChart = () => {
 
     xAxis = d3.axisBottom().scale(x).tickValues([]);
     axisX = chart.append("g").attr("class", "x axis")
-			     .attr("transform", "translate(0, 500)")
-			     .call(xAxis);
-    // TODO once we know all the classes they should all have a point drawn at 0 here so the first actual datapoint
-    // has a line (atm the line is only drawn after the 2nd status update)
+        .attr("transform", "translate(0, 500)")
+        .call(xAxis);
 };
 
 const updateChart = (newStatus) => {
@@ -232,7 +228,7 @@ const updateChart = (newStatus) => {
         }
         paths[emotion].datum(chartData[emotion])
             .attr("class", "smoothline")
-            .attr("style", `stroke: ${EMOTION_COLORS[emotion]}`)
+            .attr("style", `stroke: ${EMOTIONS[emotion].color}`)
             .attr("d", smoothLines[emotion]);
     });
     // Shift the chart left
@@ -272,5 +268,3 @@ window.onload = () => {
     initChart();
     getStatusForever();
 };
-
-
